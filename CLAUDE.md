@@ -31,16 +31,22 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
-src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+index.js                          SDK wiring only: src/app.js registers the handlers before connect()
+src/app.js                        every SDK handler -> the hub (also used by the tests)
+src/hub.js                        reading timer, states, scene events, commands, deduplicated logs
+src/devices.js                    overview and project devices: features, names (4 languages), states
+src/kanboard/client.js            Kanboard JSON-RPC client (Basic auth, batches, due dates), errors by kind
+src/kanboard/http.js              node:http/https request (self-signed certificates on request)
+src/kanboard/model.js             projects, open tasks; local day; counters; lookup; typed due dates
+src/scenes.js                     scene actions complete_task, create_task, read_today
+src/widgets.js                    dashboard widget `tasks_today` (manifest `widgets`)
+src/texts.js                      connection, error, report, action and toast texts (4 languages)
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
+src/store.js                      /data/kanboard-state.json (instance, time of the last reading)
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (en and fr mandatory)
 test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+                                  and helpers/fakeKanboard.js (built from test/fixtures/kanboard)
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +76,10 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in English, French, German and Spanish: action
+  messages, widget content, feature names, manifest texts, and
+  `docs/en.md`, `docs/fr.md`, `docs/de.md`, `docs/es.md`, kept in sync
+  (`test/i18n.test.js` checks the languages and the doc sections).
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -197,6 +205,36 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - Les filtres de scène ne font qu'égalité et appartenance : un seuil reste le travail d'un capteur.
 - **Les clés de widgets, de déclencheurs et d'actions sont figées une fois publiées.**
 - `gladys_version` `>=5.1.0` dès qu'il y a widgets, déclencheurs ou actions de scène.
+
+## Kanboard (propre à ce dépôt)
+
+- **API** vérifiée sur `kanboard/kanboard` **v1.2.56** en Docker le 24/10/2026 : JSON-RPC 2.0 sur
+  `POST /jsonrpc.php`, HTTP Basic. Deux accès : **application** (utilisateur `jsonrpc` + jeton de
+  Settings → API, tous les projets, privés compris) ou **utilisateur** (mot de passe ou jeton
+  personnel ; obligatoire avec la 2FA ; ses projets seulement). `getMyProjects`, `getMe`… répondent
+  403 « not available with the API credentials » à `jsonrpc`, et `getAllProjects` 403 à un
+  utilisateur non admin : la liste des projets dépend du nom d'utilisateur.
+- **Erreurs** : identifiants faux = HTTP 401 ; procédure ou projet interdit = HTTP 403 pour un appel
+  seul, mais **élément `{ error: { code: 403 } }` en HTTP 200 dans un lot**. `createTask` répond
+  `false` (champ invalide) ou **0** (projet inexistant) ; `closeTask` répond `true` même sur une
+  tâche déjà fermée : vérifier qu'elle est encore ouverte avant.
+- **Lots** : `getAllTasks(project_id, 1)` par projet suivi, tous dans **une seule requête**
+  (tableau JSON-RPC) ; `getAllProjects` rend aussi les projets inactifs (`is_active: 0`).
+- **Échéances** : `date_due` en **secondes Unix**, 0 = aucune. En écriture, seul un texte est
+  accepté (`Y-m-d H:i` ; un timestamp ou un ISO avec `T` → `false`), lu dans le **fuseau de
+  Kanboard** (réglage de l'application ou de l'utilisateur), que Gladys ne connaît pas. Le client
+  envoie l'heure murale du fuseau de Gladys, relit la tâche et corrige une fois par `updateTask`.
+  Une date sans heure prend **l'heure courante** (bizarrerie de Kanboard) : l'action de scène met
+  18:00 par défaut.
+- **Récurrence** : à la fermeture d'une tâche répétée « à la fermeture » (`recurrence_trigger` 2),
+  Kanboard crée une nouvelle tâche (`recurrence_child` de l'ancienne, échéance décalée). Les
+  déclencheurs « première / dernière colonne » (0 / 1) ne réagissent pas à `closeTask`.
+- **Priorités** : bornes par projet (`priority_start`, `priority_end`, `priority_default`, 0 à 3
+  par défaut) ; le widget met en orange la priorité la plus haute du projet.
+- **Événements de scène** : comme Vikunja (moments franchis depuis la dernière lecture réussie,
+  moins d'une heure, état dans `/data/kanboard-state.json`), sans rappels : Kanboard n'en a pas.
+- Pour tester : `kanboard/kanboard` sans port publié, appels par `docker exec … curl` ; le jeton
+  d'application est dans la table `settings` (`api_token`) de `/var/www/app/data/db.sqlite`.
 
 ## Store
 

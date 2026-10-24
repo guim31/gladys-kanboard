@@ -1,84 +1,86 @@
-# Vikunja
+# Kanboard
 
-Les tâches de votre [Vikunja](https://vikunja.io) dans Gladys : ce qui reste à
-faire aujourd'hui, ce qui est en retard, la prochaine tâche de chaque projet.
-Une scène réagit quand une tâche arrive à échéance ou qu'un rappel sonne, une
-autre ajoute « acheter du pain » depuis un bouton, un appui sur le tableau de
-bord coche une tâche, et Gladys peut lire les tâches du jour chaque matin.
+Les tâches de votre [Kanboard](https://kanboard.org) dans Gladys : ce qui
+reste à faire aujourd'hui, ce qui est en retard, la prochaine tâche de chaque
+projet. Une scène réagit quand une tâche arrive à échéance ou est toujours
+ouverte à minuit, une autre ajoute « acheter du pain, demain » depuis un
+bouton, un appui sur le tableau de bord ferme une tâche, et Gladys peut lire
+les tâches du jour chaque matin.
 
 > **Vos retours sont les bienvenus.** Cette intégration a été testée contre un
-> vrai serveur Vikunja (image Docker `vikunja/vikunja` v2.7.0, octobre 2026),
-> pas encore au quotidien. Si quelque chose ne marche pas comme décrit,
+> vrai serveur Kanboard (image Docker `kanboard/kanboard` v1.2.56, octobre
+> 2026), pas encore au quotidien. Si quelque chose ne marche pas comme décrit,
 > dites-le sur le [forum Gladys](https://community.gladysassistant.com) ou dans
-> les [issues](https://github.com/guim31/gladys-vikunja/issues).
+> les [issues](https://github.com/guim31/gladys-kanboard/issues).
 
-## Ce qu'il vous faut
+## Prérequis
 
 - Gladys Assistant 5.1.0 ou plus récent.
-- Un **Vikunja auto-hébergé** (0.22 ou plus récent), joignable depuis Gladys
-  (l'image Docker écoute sur le port 3456).
-- Un **jeton d'API** d'un utilisateur de Vikunja. Dans Vikunja : **Settings** →
-  **API Tokens** → **Create a token**, donnez-lui un nom (`Gladys`), une date
-  d'expiration et ces permissions :
-  - **Projects** : `read_all` ;
-  - **Tasks** : `read_all`, `read_one`, `update` (pour marquer des tâches
-    faites) et `create` (pour créer des tâches).
+- Un **Kanboard auto-hébergé** (1.2 ou plus récent), joignable depuis Gladys
+  (l'image Docker écoute sur le port 80).
+- Des identifiants pour son API, au choix :
+  - le **jeton d'API de l'application** : dans Kanboard, **Settings** →
+    **API**, copiez l'**API token**, avec le nom d'utilisateur `jsonrpc`. Il
+    voit **tous les projets** de l'instance (privés compris) et il faut un
+    administrateur pour le lire ;
+  - un **compte utilisateur** : son nom d'utilisateur, et son mot de passe ou
+    un jeton d'accès personnel (**Mon profil** → **API** ; obligatoire si la
+    double authentification est active). Il voit **les projets dont cet
+    utilisateur est membre**, et agit en son nom.
 
-  Copiez le jeton, qui commence par `tk_` : Vikunja ne l'affiche qu'une fois.
-  Sans `update` ou `create`, les compteurs, le widget et les déclencheurs
-  marchent ; seule l'action correspondante est refusée.
+## Configuration
 
-L'intégration voit les projets et les tâches que voit cet utilisateur (les
-siens et ceux partagés avec lui), et agit **en son nom**.
-
-## Installation
-
-1. Dans Gladys, **Intégrations** → installez **Vikunja**.
+1. Dans Gladys, **Intégrations** → installez **Kanboard**.
 2. Dans l'écran **Configuration**, renseignez :
-   - **Adresse** : l'adresse de Vikunja, par exemple
-     `http://192.168.1.20:3456`, ou `https://taches.example.org` derrière un
-     proxy inverse (un préfixe comme `/vikunja` est conservé) ;
-   - **Jeton d'API** : le jeton `tk_…`.
+   - **Adresse** : l'adresse de Kanboard, par exemple
+     `http://192.168.1.20:8080`, ou `https://kanboard.example.org/kanboard`
+     s'il est dans un sous-dossier (l'adresse copiée depuis un tableau marche
+     aussi) ;
+   - **Nom d'utilisateur** : `jsonrpc` (par défaut) pour le jeton d'API de
+     l'application, ou votre nom d'utilisateur Kanboard ;
+   - **Jeton d'API ou mot de passe** : le secret correspondant.
 3. Options :
    - **Projets suivis** : noms ou numéros séparés par des virgules
-     (`Maison, 3`). Vide : tous les projets. Les projets archivés ne sont
-     jamais suivis ;
-   - **Accepter les certificats auto-signés** : pour une adresse en `https://`
-     au certificat auto-signé, sur votre propre serveur seulement ;
-   - **Intervalle de rafraîchissement** : 1 à 10 minutes (5 par défaut). Les
-     échéances, les rappels et minuit sont toujours suivis à l'heure, quel que
-     soit l'intervalle ;
+     (`Maison, 3`). Vide : tous les projets. Les projets inactifs (fermés) ne
+     sont jamais suivis ;
+   - **Accepter les certificats auto-signés** : pour une adresse en
+     `https://` dont le certificat est auto-signé, sur votre propre serveur
+     seulement ;
+   - **Intervalle de rafraîchissement** : de 1 à 10 minutes (5 par défaut).
+     Les échéances et minuit sont toujours suivis à l'heure, quel que soit
+     l'intervalle ;
    - **Langue des noms de fonctionnalités** : les noms donnés aux
      fonctionnalités à l'ajout d'un appareil (français par défaut), et les
      textes envoyés aux scènes.
-4. Enregistrez, puis **Tester la connexion** : l'intégration lit Vikunja et
+4. Enregistrez, puis **Tester la connexion** : l'intégration lit Kanboard et
    donne sa version, le nombre de tâches ouvertes et de projets suivis.
 5. Dans l'onglet **Découverte**, ajoutez les appareils voulus.
 
 ## Appareils
 
-**Vikunja** (tous les projets suivis ensemble) et **Vikunja _projet_** pour
+**Kanboard** (tous les projets suivis ensemble) et **Kanboard _projet_** pour
 chaque projet suivi. Chacun a quatre fonctionnalités :
 
 | Fonctionnalité               | Ce qu'elle indique                                                                          |
 | ---------------------------- | ------------------------------------------------------------------------------------------- |
-| `Tâches ouvertes`            | les tâches pas faites, avec ou sans échéance                                                |
+| `Tâches ouvertes`            | les tâches ouvertes, avec ou sans échéance                                                  |
 | `Tâches à faire aujourd'hui` | les tâches ouvertes dues avant minuit, retards compris : ce qui reste à faire d'ici ce soir |
-| `Tâches en retard`           | les tâches ouvertes dont l'échéance est passée                                              |
-| `Prochaine tâche`            | le titre de la tâche ouverte à l'échéance la plus proche encore à venir ; `Aucune` sinon    |
+| `Tâches en retard`           | les tâches ouvertes dont la date et l'heure d'échéance sont passées                         |
+| `Prochaine tâche`            | le titre de la tâche ouverte à l'échéance la plus proche à venir ; `Aucune` sinon           |
 
-« Aujourd'hui » est le jour dans le fuseau horaire de Gladys. Un sous-projet
-est un projet à part entière : ses tâches ne comptent pas dans son parent.
+« Aujourd'hui » est le jour dans le fuseau horaire de Gladys. Dans Kanboard,
+une échéance a toujours une heure : une date choisie sans heure prend l'heure
+du moment où elle a été enregistrée.
 
 ## Tableau de bord
 
-Le widget **Tâches du jour** montre deux tuiles (à faire aujourd'hui, en
+Le widget **Tâches du jour** affiche deux tuiles (à faire aujourd'hui, en
 retard), la liste des tâches du jour, en retard d'abord, avec leur heure (en
-orange si la priorité est haute) et leur projet, et un bouton pour chacune des
-quatre plus urgentes : un appui marque la tâche faite. Choisissez un appareil
-de projet dans les réglages du widget pour ne voir que ses tâches ; laissez
-vide pour tous les projets suivis. Quand il ne reste rien, le widget le dit et
-donne la prochaine tâche.
+orange pour la priorité la plus haute du projet) et leur projet, et un bouton
+pour chacune des quatre plus urgentes : un appui ferme la tâche. Choisissez
+un appareil de projet dans les réglages du widget pour ne voir que ses
+tâches ; laissez vide pour tous les projets suivis. Quand il ne reste rien, le
+widget le dit et donne la prochaine tâche.
 
 Les compteurs peuvent aussi aller sur le tableau de bord comme toute
 fonctionnalité d'appareil.
@@ -87,85 +89,96 @@ fonctionnalité d'appareil.
 
 ### Déclencheurs
 
-- **Tâche Vikunja arrivée à échéance** : une tâche ouverte a atteint son heure
-  d'échéance.
-- **Rappel de tâche Vikunja** : un rappel d'une tâche ouverte a sonné (date
-  fixe, ou relative à l'échéance : Vikunja la calcule).
-- **Tâche Vikunja en retard** : à minuit, une tâche due ce jour-là n'est
-  toujours pas faite. Une fois par tâche et par échéance.
+- **Tâche Kanboard arrivée à échéance** : une tâche ouverte a atteint son
+  heure d'échéance.
+- **Tâche Kanboard en retard** : à minuit, une tâche due ce jour-là est
+  toujours ouverte. Une fois par tâche et par échéance.
 
-Filtres, pour les trois : le projet (un appareil de projet : l'appareil
-**Vikunja** ne filtre rien, laissez le champ vide pour tous les projets), le
-titre de la tâche. Informations transmises aux actions : la tâche, son numéro, son projet,
-sa priorité (0 à 5), son échéance ; et l'heure du rappel pour un rappel.
+Filtres, pour les deux : le projet (un appareil de projet : l'appareil
+**Kanboard** ne filtre rien, laissez le champ vide pour tous les projets), le
+titre de la tâche. Informations transmises aux actions : la tâche, son
+numéro, son projet, sa priorité (0 à 3 par défaut, réglée par projet dans
+Kanboard), son échéance.
 
-Une tâche faite avant son échéance ne déclenche rien. Une échéance déplacée à
-la main avant la lecture précédente non plus : seuls comptent les moments qui passent
-pendant que l'intégration tourne. Un redémarrage ne déclenche rien deux fois ;
-un moment passé pendant que l'intégration était arrêtée déclenche à son
-redémarrage, s'il date de moins d'une heure.
+Une tâche fermée avant son échéance ne déclenche rien. Une échéance déplacée
+à la main avant la lecture précédente ne déclenche rien non plus : seuls
+comptent les moments qui passent pendant que l'intégration tourne. Un
+redémarrage ne déclenche rien deux fois ; un moment passé pendant que
+l'intégration était arrêtée se déclenche à son retour, s'il date de moins
+d'une heure.
 
 ### Actions
 
-- **Marquer une tâche Vikunja comme faite** : indiquez le **titre** exact
-  (majuscules et accents ignorés) ou le **numéro** de la tâche (`#12`, le
-  numéro dans l'adresse de la tâche dans Vikunja). Toute tâche ouverte que voit
-  le jeton, projet suivi ou non. Une tâche répétée passe à sa prochaine
-  échéance, comme dans Vikunja. Résultats : la tâche, son numéro, son projet,
-  la prochaine échéance d'une tâche répétée.
-- **Créer une tâche Vikunja** : un titre, et le projet par nom ou numéro
-  (vide : le premier projet de la liste dans Vikunja, en général Inbox).
-  Résultats : la tâche, son numéro, son projet.
-- **Lire les tâches Vikunja du jour** : les tâches du jour en une phrase
-  (`4 tâche(s) à faire aujourd'hui : …. 2 en retard.`), pour tous les projets
+- **Fermer une tâche Kanboard** : donnez le **titre** exact (majuscules et
+  accents ignorés) ou le **numéro** de la tâche (`#12`, affiché sur la carte
+  dans Kanboard). Toute tâche ouverte que voient les identifiants, projet
+  suivi ou non. Une tâche répétée « à la fermeture » laisse son occurrence
+  suivante, comme dans Kanboard. Résultats : la tâche, son numéro, son projet,
+  l'échéance de l'occurrence suivante.
+- **Créer une tâche Kanboard** : un titre, le projet par nom ou numéro (vide :
+  le premier projet suivi, par ordre alphabétique), et une échéance
+  facultative : `2026-10-25 18:00`, `25/10/2026`, `aujourd'hui`,
+  `demain 9h00`, `+3` (dans trois jours), ou une heure seule pour
+  aujourd'hui ; sans heure, 18:00. Les mots marchent aussi en anglais,
+  allemand et espagnol (`tomorrow`, `morgen`, `mañana`). La date est lue dans
+  le fuseau horaire de Gladys, quel que soit celui de Kanboard. Résultats : la
+  tâche, son numéro, son projet, son échéance.
+- **Lire les tâches Kanboard du jour** : les tâches du jour en une phrase
+  (`5 tâche(s) à faire aujourd'hui : …. 2 en retard.`), pour tous les projets
   suivis ou l'un d'eux. Résultats : la phrase, le nombre de tâches à faire
   aujourd'hui, de tâches en retard. Envoyez la phrase dans un message, ou
-  faites-la dire par Gladys.
+  faites-la dire à Gladys.
 
-Les champs acceptent les variables de scène : `{{triggerEvent.data.task_id}}`
-marque faite la tâche qui a déclenché la scène.
+Les champs acceptent les variables de scène :
+`{{triggerEvent.data.task_id}}` ferme la tâche qui a déclenché la scène.
 
 ### Idées de scènes
 
-- À 7 h 30, **Lire les tâches Vikunja du jour**, puis envoyer la phrase sur
+- À 7 h 30, **Lire les tâches Kanboard du jour**, puis envoyer la phrase sur
   Telegram.
-- **Rappel de tâche Vikunja** sur le projet `Courses` : faire clignoter la
-  lumière de l'entrée.
-- Un bouton près de la porte lance **Créer une tâche Vikunja** avec
-  `Acheter du pain` dans `Courses`.
-- Un tag NFC sur les poubelles lance **Marquer une tâche Vikunja comme faite**
-  avec `Sortir les poubelles`.
+- **Tâche Kanboard arrivée à échéance** sur le projet `Maison` : faire
+  clignoter la lumière de l'entrée.
+- Un bouton près de la porte lance **Créer une tâche Kanboard** avec
+  `Acheter du pain` dans `Courses`, échéance `demain 9h00`.
+- Un tag NFC sur les poubelles lance **Fermer une tâche Kanboard** avec
+  `Sortir les poubelles`.
 
 ## Dépannage
 
-- **« Vikunja ne répond pas »** : vérifiez l'adresse et le port depuis la
-  machine de Gladys (`http://<adresse>:3456` ouvre Vikunja dans un navigateur).
-- **« Jeton d'API refusé ou sans une permission »** : le jeton a expiré, a été
-  supprimé ou mal copié, ou il lui manque une permission de la liste
-  ci-dessus. Vikunja répond de la même façon dans tous les cas : créez un
-  nouveau jeton avec toutes les permissions indiquées.
-- **« Aucune API Vikunja à cette adresse »** : l'adresse répond, mais pas avec
-  l'API de Vikunja : vérifiez le port, ou le préfixe derrière un proxy inverse.
+- **« Kanboard ne répond pas »** : vérifiez l'adresse et le port depuis la
+  machine de Gladys (l'adresse ouvre Kanboard dans un navigateur).
+- **« Nom d'utilisateur, jeton ou mot de passe refusé »** : avec `jsonrpc`,
+  recopiez le jeton de **Settings** → **API** (il change quand on le
+  régénère) ; avec un utilisateur, vérifiez le mot de passe, ou utilisez un
+  jeton d'accès personnel si la double authentification est active. Kanboard
+  verrouille un compte après plusieurs échecs.
+- **« Accès interdit à cet utilisateur »** : l'utilisateur ne peut pas lire
+  un projet, ou le nom d'utilisateur n'est pas `jsonrpc` pour un jeton
+  d'application.
+- **« Aucune API Kanboard à cette adresse »** : l'adresse répond, mais pas
+  avec l'API de Kanboard : vérifiez le port et le sous-dossier.
 - **« L'adresse redirige »** : saisissez l'adresse en `https://`.
-- **Un projet manque** : les projets archivés ne sont pas suivis ; un nom saisi
-  dans **Projets suivis** qui ne correspond à aucun projet est ignoré, et
-  **Tester la connexion** le signale.
+- **Un projet manque** : les projets inactifs ne sont pas suivis ; avec un
+  compte utilisateur, seuls ses projets sont vus ; un nom saisi dans
+  **Projets suivis** qui ne correspond à aucun projet est ignoré, et **Tester
+  la connexion** le signale.
 - **« Plusieurs tâches ouvertes portent ce titre »** : indiquez plutôt le
   numéro (`#12`).
-- Journaux : `LOG_LEVEL=debug` sur le conteneur montre chaque lecture.
+- Logs : `LOG_LEVEL=debug` sur le conteneur montre chaque lecture.
 
 ## Limites
 
-- Vikunja est lu toutes les 1 à 10 minutes (et à chaque échéance, chaque
-  rappel et à minuit) : une tâche faite dans Vikunja apparaît dans Gladys dans
-  ce délai. Les webhooks de Vikunja ne sont pas utilisés.
-- Deux requêtes par lecture (projets, tâches ouvertes), plus une par page
-  supplémentaire de 50 tâches. Jusqu'à 20 pages de tâches ouvertes sont lues.
-- L'intégration marque des tâches faites et crée des tâches ; elle ne les
-  modifie, ne les supprime, ne les déplace ni ne les assigne.
-- Testée avec Vikunja v2.7.0. Les versions 0.22 à 0.24 devraient marcher (la
-  liste des tâches y est `/tasks/all`, utilisée quand `/tasks` n'existe pas),
-  mais elles n'ont pas été testées.
-- Gladys ne garde aucune donnée de Vikunja hormis `/data/vikunja-state.json`
-  (l'heure de la dernière lecture, pour qu'aucun événement ne parte deux fois).
-- Sans lien avec Vikunja.
+- Kanboard est lu toutes les 1 à 10 minutes (et à chaque échéance et à
+  minuit) : une tâche fermée dans Kanboard apparaît dans Gladys dans ce délai.
+  Les webhooks de Kanboard ne sont pas utilisés.
+- Deux requêtes par lecture : les projets, puis les tâches ouvertes de tous
+  les projets suivis en un seul lot JSON-RPC.
+- L'intégration ferme et crée des tâches ; elle ne les modifie, ne les
+  déplace, ne les assigne ni ne les supprime. Les sous-tâches ne sont pas
+  comptées.
+- Testée avec Kanboard v1.2.56, avec le jeton d'application et avec un compte
+  utilisateur.
+- Gladys ne garde aucune donnée de Kanboard en dehors de
+  `/data/kanboard-state.json` (l'heure de la dernière lecture, pour qu'aucun
+  événement ne se déclenche deux fois).
+- Sans lien avec Kanboard.
