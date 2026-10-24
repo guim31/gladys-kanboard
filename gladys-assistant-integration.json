@@ -1,177 +1,750 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Kanboard",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Kanboard tasks: open, due today and overdue, closed or created from a scene or the dashboard.",
+    "fr": "Tâches Kanboard : ouvertes, du jour, en retard, fermées ou créées par scène ou tableau de bord.",
+    "de": "Kanboard-Aufgaben: offen, heute, überfällig, geschlossen oder erstellt per Szene oder Dashboard.",
+    "es": "Tareas de Kanboard: abiertas, del día, atrasadas, cerradas o creadas desde una escena o el panel."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-kanboard:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-kanboard/main/cover.png",
+  "categories": ["services"],
+  "transports": ["local"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Your Kanboard",
+        "fr": "Votre Kanboard",
+        "de": "Dein Kanboard",
+        "es": "Su Kanboard"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "A self-hosted Kanboard (1.2 or later). Use the application API token (Settings, API) with the user jsonrpc, or your own username and password or personal token.",
+        "fr": "Un Kanboard auto-hébergé (1.2 ou plus récent). Utilisez le jeton d'API de l'application (Settings, API) avec l'utilisateur jsonrpc, ou votre nom d'utilisateur et votre mot de passe ou jeton personnel.",
+        "de": "Ein selbst gehostetes Kanboard (1.2 oder neuer). Verwende das API-Token der Anwendung (Settings, API) mit dem Benutzer jsonrpc oder deinen Benutzernamen mit Passwort oder persönlichem Token.",
+        "es": "Un Kanboard autoalojado (1.2 o posterior). Use el token de API de la aplicación (Settings, API) con el usuario jsonrpc, o su nombre de usuario y su contraseña o token personal."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://docs.kanboard.org/v1/api/",
+          "label": {
+            "en": "Kanboard API documentation",
+            "fr": "Documentation de l'API Kanboard",
+            "de": "Kanboard-API-Dokumentation",
+            "es": "Documentación de la API de Kanboard"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "url",
+      "type": "string",
+      "label": {
+        "en": "Address",
+        "fr": "Adresse",
+        "de": "Adresse",
+        "es": "Dirección"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
+      "description": {
+        "en": "Address of Kanboard, with https:// for HTTPS, :port if not the default and the sub-folder if any (/kanboard).",
+        "fr": "Adresse de Kanboard, avec https:// pour le HTTPS, :port s'il n'est pas standard et le sous-dossier s'il y en a un (/kanboard).",
+        "de": "Adresse von Kanboard, mit https:// für HTTPS, :Port, falls nicht Standard, und dem Unterordner, falls vorhanden (/kanboard).",
+        "es": "Dirección de Kanboard, con https:// para HTTPS, :puerto si no es el estándar y la subcarpeta si la hay (/kanboard)."
+      },
+      "placeholder": {
+        "en": "e.g. http://192.168.1.20:8080",
+        "fr": "ex. http://192.168.1.20:8080",
+        "de": "z. B. http://192.168.1.20:8080",
+        "es": "p. ej. http://192.168.1.20:8080"
+      },
       "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "default": ""
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "username",
+      "type": "string",
+      "label": {
+        "en": "Username",
+        "fr": "Nom d'utilisateur",
+        "de": "Benutzername",
+        "es": "Nombre de usuario"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
+      "description": {
+        "en": "jsonrpc for the application API token (every project), or your Kanboard username (your projects).",
+        "fr": "jsonrpc pour le jeton d'API de l'application (tous les projets), ou votre nom d'utilisateur Kanboard (vos projets).",
+        "de": "jsonrpc für das API-Token der Anwendung (alle Projekte) oder dein Kanboard-Benutzername (deine Projekte).",
+        "es": "jsonrpc para el token de API de la aplicación (todos los proyectos), o su nombre de usuario de Kanboard (sus proyectos)."
+      },
       "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "default": "jsonrpc"
     },
     {
-      "key": "unit",
-      "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "key": "api_token",
+      "type": "secret",
+      "label": {
+        "en": "API token or password",
+        "fr": "Jeton d'API ou mot de passe",
+        "de": "API-Token oder Passwort",
+        "es": "Token de API o contraseña"
+      },
+      "description": {
+        "en": "With jsonrpc: the token of Settings, API. With a username: its password or personal token (My profile, API).",
+        "fr": "Avec jsonrpc : le jeton de Settings, API. Avec un nom d'utilisateur : son mot de passe ou son jeton personnel (Mon profil, API).",
+        "de": "Mit jsonrpc: das Token unter Settings, API. Mit einem Benutzernamen: sein Passwort oder persönliches Token (Mein Profil, API).",
+        "es": "Con jsonrpc: el token de Settings, API. Con un nombre de usuario: su contraseña o token personal (Mi perfil, API)."
+      },
+      "required": true
+    },
+    {
+      "key": "options",
+      "type": "section",
+      "label": {
+        "en": "Options",
+        "fr": "Options",
+        "de": "Optionen",
+        "es": "Opciones"
+      }
+    },
+    {
+      "key": "projects",
+      "type": "string",
+      "label": {
+        "en": "Followed projects",
+        "fr": "Projets suivis",
+        "de": "Verfolgte Projekte",
+        "es": "Proyectos seguidos"
+      },
+      "description": {
+        "en": "Names or numbers separated by commas. Empty: every project. One device per followed project.",
+        "fr": "Noms ou numéros séparés par des virgules. Vide : tous les projets. Un appareil par projet suivi.",
+        "de": "Namen oder Nummern, durch Kommas getrennt. Leer: alle Projekte. Ein Gerät pro verfolgtem Projekt.",
+        "es": "Nombres o números separados por comas. Vacío: todos los proyectos. Un dispositivo por proyecto seguido."
+      },
+      "placeholder": {
+        "en": "e.g. Home, Shopping",
+        "fr": "ex. Maison, Courses",
+        "de": "z. B. Haushalt, Einkauf",
+        "es": "p. ej. Casa, Compras"
+      },
       "required": false,
-      "default": "celsius",
+      "default": ""
+    },
+    {
+      "key": "allow_self_signed",
+      "type": "boolean",
+      "label": {
+        "en": "Accept self-signed certificates",
+        "fr": "Accepter les certificats auto-signés",
+        "de": "Selbstsignierte Zertifikate akzeptieren",
+        "es": "Aceptar certificados autofirmados"
+      },
+      "description": {
+        "en": "For an https:// address whose certificate is self-signed. Tick only for your own server.",
+        "fr": "Pour une adresse en https:// dont le certificat est auto-signé. À cocher pour votre propre serveur seulement.",
+        "de": "Für eine https://-Adresse mit selbstsigniertem Zertifikat. Nur für deinen eigenen Server aktivieren.",
+        "es": "Para una dirección https:// con certificado autofirmado. Márquelo solo para su propio servidor."
+      },
+      "required": false,
+      "default": false
+    },
+    {
+      "key": "poll_interval",
+      "type": "select",
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle de rafraîchissement",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
+      "description": {
+        "en": "How often Kanboard is read. Due times and midnight are always followed on time.",
+        "fr": "Fréquence de lecture de Kanboard. Échéances et minuit sont toujours suivis à l'heure.",
+        "de": "Wie oft Kanboard gelesen wird. Fälligkeiten und Mitternacht werden immer pünktlich berücksichtigt.",
+        "es": "Con qué frecuencia se lee Kanboard. Vencimientos y medianoche se siguen siempre a tiempo."
+      },
+      "required": false,
+      "default": "300",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "60",
+          "label": {
+            "en": "1 minute",
+            "fr": "1 minute",
+            "de": "1 Minute",
+            "es": "1 minuto"
+          }
+        },
+        {
+          "value": "120",
+          "label": {
+            "en": "2 minutes",
+            "fr": "2 minutes",
+            "de": "2 Minuten",
+            "es": "2 minutos"
+          }
+        },
+        {
+          "value": "300",
+          "label": {
+            "en": "5 minutes",
+            "fr": "5 minutes",
+            "de": "5 Minuten",
+            "es": "5 minutos"
+          }
+        },
+        {
+          "value": "600",
+          "label": {
+            "en": "10 minutes",
+            "fr": "10 minutes",
+            "de": "10 Minuten",
+            "es": "10 minutos"
+          }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the feature names",
+        "fr": "Langue des noms de fonctionnalités",
+        "de": "Sprache der Funktionsnamen",
+        "es": "Idioma de los nombres de funciones"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Names given to the features when a device is added, and texts sent to scenes.",
+        "fr": "Noms donnés aux fonctionnalités à l'ajout d'un appareil, et textes envoyés aux scènes.",
+        "de": "Namen der Funktionen beim Hinzufügen eines Geräts und an Szenen gesendete Texte.",
+        "es": "Nombres de las funciones al añadir un dispositivo y textos enviados a las escenas."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "description": {
+        "en": "Reads Kanboard now and reports what it finds.",
+        "fr": "Lit Kanboard maintenant et indique ce qu'il trouve.",
+        "de": "Liest Kanboard sofort und meldet, was es findet.",
+        "es": "Lee Kanboard ahora e indica lo que encuentra."
+      },
       "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "task_due",
+      "label": {
+        "en": "Kanboard task due",
+        "fr": "Tâche Kanboard arrivée à échéance",
+        "de": "Kanboard-Aufgabe fällig",
+        "es": "Tarea de Kanboard vencida"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "An open task reached its due time.",
+        "fr": "Une tâche ouverte a atteint son heure d'échéance.",
+        "de": "Eine offene Aufgabe hat ihre Fälligkeit erreicht.",
+        "es": "Una tarea abierta ha llegado a su hora de vencimiento."
       },
       "fields": [
         {
-          "key": "device",
+          "key": "project",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "label": {
+            "en": "Project (empty: any)",
+            "fr": "Projet (vide : tous)",
+            "de": "Projekt (leer: beliebig)",
+            "es": "Proyecto (vacío: cualquiera)"
+          }
         },
         {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
+          "key": "task",
+          "type": "string",
+          "label": {
+            "en": "Task title (empty: any)",
+            "fr": "Titre de la tâche (vide : toutes)",
+            "de": "Titel der Aufgabe (leer: beliebig)",
+            "es": "Título de la tarea (vacío: cualquiera)"
+          }
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "task",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Task",
+            "fr": "Tâche",
+            "de": "Aufgabe",
+            "es": "Tarea"
+          }
+        },
+        {
+          "key": "task_id",
+          "type": "number",
+          "label": {
+            "en": "Task number",
+            "fr": "Numéro de la tâche",
+            "de": "Nummer der Aufgabe",
+            "es": "Número de la tarea"
+          }
+        },
+        {
+          "key": "project_name",
+          "type": "string",
+          "label": {
+            "en": "Project",
+            "fr": "Projet",
+            "de": "Projekt",
+            "es": "Proyecto"
+          }
+        },
+        {
+          "key": "priority",
+          "type": "number",
+          "label": {
+            "en": "Priority (0 to 3 by default)",
+            "fr": "Priorité (0 à 3 par défaut)",
+            "de": "Priorität (standardmäßig 0 bis 3)",
+            "es": "Prioridad (0 a 3 por defecto)"
+          }
+        },
+        {
+          "key": "due_date",
+          "type": "string",
+          "label": {
+            "en": "Due date (ISO 8601)",
+            "fr": "Échéance (ISO 8601)",
+            "de": "Fälligkeit (ISO 8601)",
+            "es": "Vencimiento (ISO 8601)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "task_overdue",
+      "label": {
+        "en": "Kanboard task overdue",
+        "fr": "Tâche Kanboard en retard",
+        "de": "Kanboard-Aufgabe überfällig",
+        "es": "Tarea de Kanboard atrasada"
+      },
+      "description": {
+        "en": "At midnight, a task due that day is still not done.",
+        "fr": "À minuit, une tâche due ce jour-là n'est toujours pas faite.",
+        "de": "Um Mitternacht ist eine an diesem Tag fällige Aufgabe noch nicht erledigt.",
+        "es": "A medianoche, una tarea que vencía ese día sigue sin hacerse."
+      },
+      "fields": [
+        {
+          "key": "project",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Project (empty: any)",
+            "fr": "Projet (vide : tous)",
+            "de": "Projekt (leer: beliebig)",
+            "es": "Proyecto (vacío: cualquiera)"
+          }
+        },
+        {
+          "key": "task",
+          "type": "string",
+          "label": {
+            "en": "Task title (empty: any)",
+            "fr": "Titre de la tâche (vide : toutes)",
+            "de": "Titel der Aufgabe (leer: beliebig)",
+            "es": "Título de la tarea (vacío: cualquiera)"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "task",
+          "type": "string",
+          "label": {
+            "en": "Task",
+            "fr": "Tâche",
+            "de": "Aufgabe",
+            "es": "Tarea"
+          }
+        },
+        {
+          "key": "task_id",
+          "type": "number",
+          "label": {
+            "en": "Task number",
+            "fr": "Numéro de la tâche",
+            "de": "Nummer der Aufgabe",
+            "es": "Número de la tarea"
+          }
+        },
+        {
+          "key": "project_name",
+          "type": "string",
+          "label": {
+            "en": "Project",
+            "fr": "Projet",
+            "de": "Projekt",
+            "es": "Proyecto"
+          }
+        },
+        {
+          "key": "priority",
+          "type": "number",
+          "label": {
+            "en": "Priority (0 to 3 by default)",
+            "fr": "Priorité (0 à 3 par défaut)",
+            "de": "Priorität (standardmäßig 0 bis 3)",
+            "es": "Prioridad (0 a 3 por defecto)"
+          }
+        },
+        {
+          "key": "due_date",
+          "type": "string",
+          "label": {
+            "en": "Due date (ISO 8601)",
+            "fr": "Échéance (ISO 8601)",
+            "de": "Fälligkeit (ISO 8601)",
+            "es": "Vencimiento (ISO 8601)"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "complete_task",
+      "label": {
+        "en": "Close a Kanboard task",
+        "fr": "Fermer une tâche Kanboard",
+        "de": "Kanboard-Aufgabe schließen",
+        "es": "Cerrar una tarea de Kanboard"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Closes an open task, as the user of the credentials.",
+        "fr": "Ferme une tâche ouverte, au nom de l'utilisateur des identifiants.",
+        "de": "Schließt eine offene Aufgabe, im Namen des Benutzers der Zugangsdaten.",
+        "es": "Cierra una tarea abierta, en nombre del usuario de las credenciales."
+      },
+      "timeout_seconds": 20,
       "fields": [
         {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
+          "key": "task",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Task title or number (#12)",
+            "fr": "Titre ou numéro de la tâche (#12)",
+            "de": "Titel oder Nummer der Aufgabe (#12)",
+            "es": "Título o número de la tarea (#12)"
+          },
+          "description": {
+            "en": "The exact title (case and accents ignored), or the number shown in Kanboard (#12).",
+            "fr": "Le titre exact (majuscules et accents ignorés), ou le numéro affiché dans Kanboard (#12).",
+            "de": "Der genaue Titel (Groß- und Kleinschreibung und Akzente egal) oder die in Kanboard angezeigte Nummer (#12).",
+            "es": "El título exacto (sin distinguir mayúsculas ni acentos), o el número que muestra Kanboard (#12)."
+          }
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "task",
+          "type": "string",
+          "label": {
+            "en": "Task",
+            "fr": "Tâche",
+            "de": "Aufgabe",
+            "es": "Tarea"
+          }
+        },
+        {
+          "key": "task_id",
+          "type": "number",
+          "label": {
+            "en": "Task number",
+            "fr": "Numéro de la tâche",
+            "de": "Nummer der Aufgabe",
+            "es": "Número de la tarea"
+          }
+        },
+        {
+          "key": "project_name",
+          "type": "string",
+          "label": {
+            "en": "Project",
+            "fr": "Projet",
+            "de": "Projekt",
+            "es": "Proyecto"
+          }
+        },
+        {
+          "key": "next_due_date",
+          "type": "string",
+          "label": {
+            "en": "Due date of the next occurrence (ISO 8601)",
+            "fr": "Échéance de l'occurrence suivante (ISO 8601)",
+            "de": "Fälligkeit des nächsten Vorkommens (ISO 8601)",
+            "es": "Vencimiento de la siguiente repetición (ISO 8601)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "create_task",
+      "label": {
+        "en": "Create a Kanboard task",
+        "fr": "Créer une tâche Kanboard",
+        "de": "Kanboard-Aufgabe erstellen",
+        "es": "Crear una tarea de Kanboard"
+      },
+      "description": {
+        "en": "Adds a task to a project, as the user of the credentials.",
+        "fr": "Ajoute une tâche à un projet, au nom de l'utilisateur des identifiants.",
+        "de": "Fügt einem Projekt eine Aufgabe hinzu, im Namen des Benutzers der Zugangsdaten.",
+        "es": "Añade una tarea a un proyecto, en nombre del usuario de las credenciales."
+      },
+      "timeout_seconds": 20,
+      "fields": [
+        {
+          "key": "title",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel",
+            "es": "Título"
+          }
+        },
+        {
+          "key": "project",
+          "type": "string",
+          "label": {
+            "en": "Project name or number (empty: the first followed)",
+            "fr": "Nom ou numéro du projet (vide : le premier suivi)",
+            "de": "Name oder Nummer des Projekts (leer: das erste verfolgte)",
+            "es": "Nombre o número del proyecto (vacío: el primero seguido)"
+          },
+          "description": {
+            "en": "Empty: the first followed project, by name.",
+            "fr": "Vide : le premier projet suivi, par ordre alphabétique.",
+            "de": "Leer: das erste verfolgte Projekt, nach Namen.",
+            "es": "Vacío: el primer proyecto seguido, por nombre."
+          }
+        },
+        {
+          "key": "due_date",
+          "type": "string",
+          "label": {
+            "en": "Due date (empty: none)",
+            "fr": "Échéance (vide : aucune)",
+            "de": "Fälligkeit (leer: keine)",
+            "es": "Vencimiento (vacío: ninguno)"
+          },
+          "description": {
+            "en": "e.g. 2026-10-25 18:00, 25/10/2026, today, tomorrow 9:00, +3 (days). Without a time: 18:00.",
+            "fr": "ex. 2026-10-25 18:00, 25/10/2026, aujourd'hui, demain 9h00, +3 (jours). Sans heure : 18:00.",
+            "de": "z. B. 2026-10-25 18:00, 25/10/2026, heute, morgen 9:00, +3 (Tage). Ohne Uhrzeit: 18:00.",
+            "es": "p. ej. 2026-10-25 18:00, 25/10/2026, hoy, mañana 9:00, +3 (días). Sin hora: 18:00."
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "key": "task",
+          "type": "string",
+          "label": {
+            "en": "Task",
+            "fr": "Tâche",
+            "de": "Aufgabe",
+            "es": "Tarea"
+          }
+        },
+        {
+          "key": "task_id",
+          "type": "number",
+          "label": {
+            "en": "Task number",
+            "fr": "Numéro de la tâche",
+            "de": "Nummer der Aufgabe",
+            "es": "Número de la tarea"
+          }
+        },
+        {
+          "key": "project_name",
+          "type": "string",
+          "label": {
+            "en": "Project",
+            "fr": "Projet",
+            "de": "Projekt",
+            "es": "Proyecto"
+          }
+        },
+        {
+          "key": "due_date",
+          "type": "string",
+          "label": {
+            "en": "Due date (ISO 8601)",
+            "fr": "Échéance (ISO 8601)",
+            "de": "Fälligkeit (ISO 8601)",
+            "es": "Vencimiento (ISO 8601)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "read_today",
+      "label": {
+        "en": "Read today's Kanboard tasks",
+        "fr": "Lire les tâches Kanboard du jour",
+        "de": "Heutige Kanboard-Aufgaben lesen",
+        "es": "Leer las tareas de Kanboard del día"
+      },
+      "description": {
+        "en": "Today's tasks as a sentence, for a message or a voice announcement.",
+        "fr": "Les tâches du jour en une phrase, pour un message ou une annonce vocale.",
+        "de": "Die heutigen Aufgaben als Satz, für eine Nachricht oder eine Sprachansage.",
+        "es": "Las tareas del día en una frase, para un mensaje o un anuncio de voz."
+      },
+      "timeout_seconds": 20,
+      "fields": [
+        {
+          "key": "project",
+          "type": "string",
+          "label": {
+            "en": "Project name or number (empty: all followed)",
+            "fr": "Nom ou numéro du projet (vide : tous les suivis)",
+            "de": "Name oder Nummer des Projekts (leer: alle verfolgten)",
+            "es": "Nombre o número del proyecto (vacío: todos los seguidos)"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "key": "text",
+          "type": "string",
+          "label": {
+            "en": "Sentence",
+            "fr": "Phrase",
+            "de": "Satz",
+            "es": "Frase"
+          }
+        },
+        {
+          "key": "count",
+          "type": "number",
+          "label": {
+            "en": "Tasks to do today",
+            "fr": "Tâches à faire aujourd'hui",
+            "de": "Aufgaben für heute",
+            "es": "Tareas para hoy"
+          }
+        },
+        {
+          "key": "overdue",
+          "type": "number",
+          "label": {
+            "en": "Overdue tasks",
+            "fr": "Tâches en retard",
+            "de": "Überfällige Aufgaben",
+            "es": "Tareas atrasadas"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "tasks_today",
+      "label": {
+        "en": "Today's tasks",
+        "fr": "Tâches du jour",
+        "de": "Heutige Aufgaben",
+        "es": "Tareas del día"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "Tasks left to do today, overdue first, with a button to close each one.",
+        "fr": "Les tâches à faire aujourd'hui, en retard d'abord, avec un bouton pour les fermer.",
+        "de": "Heute noch zu erledigende Aufgaben, überfällige zuerst, mit einer Taste zum Schließen.",
+        "es": "Tareas pendientes de hoy, atrasadas primero, con un botón para cerrarlas."
+      },
+      "icon": "check-square",
+      "action_timeout_seconds": 20,
+      "settings": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "required": false,
+          "label": {
+            "en": "Project (empty: all followed)",
+            "fr": "Projet (vide : tous les suivis)",
+            "de": "Projekt (leer: alle verfolgten)",
+            "es": "Proyecto (vacío: todos los seguidos)"
+          },
+          "description": {
+            "en": "A project device shows only the tasks of that project.",
+            "fr": "Un appareil de projet ne montre que les tâches de ce projet.",
+            "de": "Ein Projektgerät zeigt nur die Aufgaben dieses Projekts.",
+            "es": "Un dispositivo de proyecto muestra solo las tareas de ese proyecto."
+          }
+        }
+      ]
     }
   ]
 }

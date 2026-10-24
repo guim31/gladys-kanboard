@@ -1,8 +1,8 @@
 {
-  "name": "gladys-integration-template-js",
+  "name": "gladys-kanboard",
   "version": "1.0.0",
   "private": true,
-  "description": "Official starter template to build an external integration for Gladys Assistant with the JavaScript SDK.",
+  "description": "Kanboard integration for Gladys Assistant: open, due today and overdue tasks, tasks created or closed from Gladys.",
   "type": "module",
   "main": "index.js",
   "scripts": {

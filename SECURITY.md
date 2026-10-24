@@ -30,6 +30,20 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+What the integration handles:
+
+- the **Kanboard credentials** (the application API token, or a user's
+  password or personal access token), stored by Gladys in the integration
+  configuration (a `secret` field), sent only to the configured Kanboard
+  address in the HTTP Basic `Authorization` header, and never logged. Prefer
+  a personal access token of a dedicated user to the application token, which
+  sees every project;
+- under `/data`, only `kanboard-state.json`: the configured address and the
+  time of the last reading (no credentials, no task);
+- network: outgoing HTTP(S) requests to the configured Kanboard address only.
+  With "Accept self-signed certificates" ticked, the certificate of that
+  address is not verified.
+
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+and Kanboard itself.

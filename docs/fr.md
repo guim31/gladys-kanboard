@@ -1,67 +1,186 @@
-# Template de démonstration
+# Kanboard
 
-Ceci est la documentation utilisateur de l'intégration. Gladys ré-héberge ce
-fichier et affiche un lien **Documentation** permanent vers lui dans l'écran
-de configuration (dans la langue de l'utilisateur, avec l'anglais en repli) —
-c'est au moment de configurer que l'utilisateur en a le plus besoin. Gardez
-les courtes indications d'accueil dans les blocs `section` du `config_schema`
-du manifest ; mettez ici le pas-à-pas détaillé (captures d'écran, dépannage…).
+Les tâches de votre [Kanboard](https://kanboard.org) dans Gladys : ce qui
+reste à faire aujourd'hui, ce qui est en retard, la prochaine tâche de chaque
+projet. Une scène réagit quand une tâche arrive à échéance ou est toujours
+ouverte à minuit, une autre ajoute « acheter du pain, demain » depuis un
+bouton, un appui sur le tableau de bord ferme une tâche, et Gladys peut lire
+les tâches du jour chaque matin.
 
-## Ce que vous obtenez
+> **Vos retours sont les bienvenus.** Cette intégration a été testée contre un
+> vrai serveur Kanboard (image Docker `kanboard/kanboard` v1.2.56, octobre
+> 2026), pas encore au quotidien. Si quelque chose ne marche pas comme décrit,
+> dites-le sur le [forum Gladys](https://community.gladysassistant.com) ou dans
+> les [issues](https://github.com/guim31/gladys-kanboard/issues).
 
-Six appareils de démonstration apparaissent après l'installation : une
-station météo (vraies données Open-Meteo), un interrupteur, une lampe
-variable, une prise connectée avec mesure de puissance, un détecteur de
-mouvement et une caméra.
+## Prérequis
+
+- Gladys Assistant 5.1.0 ou plus récent.
+- Un **Kanboard auto-hébergé** (1.2 ou plus récent), joignable depuis Gladys
+  (l'image Docker écoute sur le port 80).
+- Des identifiants pour son API, au choix :
+  - le **jeton d'API de l'application** : dans Kanboard, **Settings** →
+    **API**, copiez l'**API token**, avec le nom d'utilisateur `jsonrpc`. Il
+    voit **tous les projets** de l'instance (privés compris) et il faut un
+    administrateur pour le lire ;
+  - un **compte utilisateur** : son nom d'utilisateur, et son mot de passe ou
+    un jeton d'accès personnel (**Mon profil** → **API** ; obligatoire si la
+    double authentification est active). Il voit **les projets dont cet
+    utilisateur est membre**, et agit en son nom.
 
 ## Configuration
 
-1. Ouvrez l'onglet **Configuration** de l'intégration.
-2. Renseignez la **latitude** et la **longitude** que la station météo de
-   démonstration doit observer (Paris par défaut), et choisissez votre unité
-   de température. L'**intervalle de rafraîchissement** règle la fréquence
-   de lecture de la station météo et de la puissance de la prise : toutes
-   les 5 minutes par défaut, toutes les minutes au plus.
-3. Enregistrez : les appareils apparaissent dans l'onglet **Découverte**,
-   prêts à être ajoutés.
+1. Dans Gladys, **Intégrations** → installez **Kanboard**.
+2. Dans l'écran **Configuration**, renseignez :
+   - **Adresse** : l'adresse de Kanboard, par exemple
+     `http://192.168.1.20:8080`, ou `https://kanboard.example.org/kanboard`
+     s'il est dans un sous-dossier (l'adresse copiée depuis un tableau marche
+     aussi) ;
+   - **Nom d'utilisateur** : `jsonrpc` (par défaut) pour le jeton d'API de
+     l'application, ou votre nom d'utilisateur Kanboard ;
+   - **Jeton d'API ou mot de passe** : le secret correspondant.
+3. Options :
+   - **Projets suivis** : noms ou numéros séparés par des virgules
+     (`Maison, 3`). Vide : tous les projets. Les projets inactifs (fermés) ne
+     sont jamais suivis ;
+   - **Accepter les certificats auto-signés** : pour une adresse en
+     `https://` dont le certificat est auto-signé, sur votre propre serveur
+     seulement ;
+   - **Intervalle de rafraîchissement** : de 1 à 10 minutes (5 par défaut).
+     Les échéances et minuit sont toujours suivis à l'heure, quel que soit
+     l'intervalle ;
+   - **Langue des noms de fonctionnalités** : les noms donnés aux
+     fonctionnalités à l'ajout d'un appareil (français par défaut), et les
+     textes envoyés aux scènes.
+4. Enregistrez, puis **Tester la connexion** : l'intégration lit Kanboard et
+   donne sa version, le nombre de tâches ouvertes et de projets suivis.
+5. Dans l'onglet **Découverte**, ajoutez les appareils voulus.
 
-Le réglage **Préférer la connexion locale** pilote la prise de
-démonstration : elle affiche en badge le canal réellement utilisé (local ou
-cloud), avec un point orange quand elle fonctionne en mode dégradé (local
-refusé, bascule cloud).
+## Appareils
 
-## Actions
+**Kanboard** (tous les projets suivis ensemble) et **Kanboard _projet_** pour
+chaque projet suivi. Chacun a quatre fonctionnalités :
 
-- **Tester le fournisseur météo** — effectue une requête en direct vers
-  Open-Meteo et affiche la température et l'humidité actuelles sous le
-  bouton.
-- **Identifier un appareil** — choisissez un de vos appareils dans la liste
-  et il se signale (la lampe de démonstration « clignote » dans les logs).
+| Fonctionnalité               | Ce qu'elle indique                                                                          |
+| ---------------------------- | ------------------------------------------------------------------------------------------- |
+| `Tâches ouvertes`            | les tâches ouvertes, avec ou sans échéance                                                  |
+| `Tâches à faire aujourd'hui` | les tâches ouvertes dues avant minuit, retards compris : ce qui reste à faire d'ici ce soir |
+| `Tâches en retard`           | les tâches ouvertes dont la date et l'heure d'échéance sont passées                         |
+| `Prochaine tâche`            | le titre de la tâche ouverte à l'échéance la plus proche à venir ; `Aucune` sinon           |
 
-## Scènes
-
-L'intégration ajoute ses propres cartes à l'éditeur de scènes (Gladys 5.1
-ou plus récent), dans la catégorie **Intégrations** :
-
-- **Mouvement détecté** (déclencheur) — lance la scène quand un détecteur
-  de démonstration voit bouger quelque chose. Choisissez éventuellement le
-  détecteur et ce qui a bougé (personne, animal) ; laissés vides, toute
-  détection correspond. Les actions suivantes peuvent lire ce qui a bougé
-  avec `{{triggerEvent.data.target}}`.
-- **Identifier un appareil** (action) — fait se signaler l'appareil choisi.
-  Elle indique si l'appareil a pu se signaler, pour que les actions
-  suivantes puissent en dépendre.
+« Aujourd'hui » est le jour dans le fuseau horaire de Gladys. Dans Kanboard,
+une échéance a toujours une heure : une date choisie sans heure prend l'heure
+du moment où elle a été enregistrée.
 
 ## Tableau de bord
 
-Ajoutez le widget **État de la démo** à un tableau de bord : il affiche en
-direct la température de la station météo et la puissance de la prise du
-bureau, la connexion utilisée par la prise (en orange si dégradée) et la
-position observée. Son bouton **Identifier la lampe** fait se signaler la
-lampe de démonstration.
+Le widget **Tâches du jour** affiche deux tuiles (à faire aujourd'hui, en
+retard), la liste des tâches du jour, en retard d'abord, avec leur heure (en
+orange pour la priorité la plus haute du projet) et leur projet, et un bouton
+pour chacune des quatre plus urgentes : un appui ferme la tâche. Choisissez
+un appareil de projet dans les réglages du widget pour ne voir que ses
+tâches ; laissez vide pour tous les projets suivis. Quand il ne reste rien, le
+widget le dit et donne la prochaine tâche.
+
+Les compteurs peuvent aussi aller sur le tableau de bord comme toute
+fonctionnalité d'appareil.
+
+## Scènes
+
+### Déclencheurs
+
+- **Tâche Kanboard arrivée à échéance** : une tâche ouverte a atteint son
+  heure d'échéance.
+- **Tâche Kanboard en retard** : à minuit, une tâche due ce jour-là est
+  toujours ouverte. Une fois par tâche et par échéance.
+
+Filtres, pour les deux : le projet (un appareil de projet : l'appareil
+**Kanboard** ne filtre rien, laissez le champ vide pour tous les projets), le
+titre de la tâche (exact, majuscules et accents compris, contrairement aux
+actions). Informations transmises aux actions : la tâche, son
+numéro, son projet, sa priorité (0 à 3 par défaut, réglée par projet dans
+Kanboard), son échéance.
+
+Une tâche fermée avant son échéance ne déclenche rien. Une échéance déplacée
+à la main avant la lecture précédente ne déclenche rien non plus : seuls
+comptent les moments qui passent pendant que l'intégration tourne. Un
+redémarrage ne déclenche rien deux fois ; un moment passé pendant que
+l'intégration était arrêtée se déclenche à son retour, s'il date de moins
+d'une heure.
+
+### Actions
+
+- **Fermer une tâche Kanboard** : donnez le **titre** exact (majuscules et
+  accents ignorés) ou le **numéro** de la tâche (`#12`, affiché sur la carte
+  dans Kanboard). Toute tâche ouverte que voient les identifiants, projet
+  suivi ou non. Une tâche répétée « à la fermeture » laisse son occurrence
+  suivante, comme dans Kanboard. Résultats : la tâche, son numéro, son projet,
+  l'échéance de l'occurrence suivante.
+- **Créer une tâche Kanboard** : un titre, le projet par nom ou numéro (vide :
+  le premier projet suivi, par ordre alphabétique), et une échéance
+  facultative : `2026-10-25 18:00`, `25/10/2026`, `aujourd'hui`,
+  `demain 9h00`, `+3` (dans trois jours), ou une heure seule pour
+  aujourd'hui ; sans heure, 18:00 (23:59 si 18:00 est passé). Les mots marchent aussi en anglais,
+  allemand et espagnol (`tomorrow`, `morgen`, `mañana`). La date est lue dans
+  le fuseau horaire de Gladys, quel que soit celui de Kanboard. Résultats : la
+  tâche, son numéro, son projet, son échéance.
+- **Lire les tâches Kanboard du jour** : les tâches du jour en une phrase
+  (`5 tâche(s) à faire aujourd'hui : …. 2 en retard.`), pour tous les projets
+  suivis ou l'un d'eux. Résultats : la phrase, le nombre de tâches à faire
+  aujourd'hui, de tâches en retard. Envoyez la phrase dans un message, ou
+  faites-la dire à Gladys.
+
+Les champs acceptent les variables de scène :
+`{{triggerEvent.data.task_id}}` ferme la tâche qui a déclenché la scène.
+
+### Idées de scènes
+
+- À 7 h 30, **Lire les tâches Kanboard du jour**, puis envoyer la phrase sur
+  Telegram.
+- **Tâche Kanboard arrivée à échéance** sur le projet `Maison` : faire
+  clignoter la lumière de l'entrée.
+- Un bouton près de la porte lance **Créer une tâche Kanboard** avec
+  `Acheter du pain` dans `Courses`, échéance `demain 9h00`.
+- Un tag NFC sur les poubelles lance **Fermer une tâche Kanboard** avec
+  `Sortir les poubelles`.
 
 ## Dépannage
 
-L'intégration journalise tout ce qu'elle fait : consultez les logs de
-l'intégration depuis l'interface Gladys (ou `docker logs` sur l'hôte) avec
-`LOG_LEVEL=debug` pour le détail complet.
+- **« Kanboard ne répond pas »** : vérifiez l'adresse et le port depuis la
+  machine de Gladys (l'adresse ouvre Kanboard dans un navigateur).
+- **« Nom d'utilisateur, jeton ou mot de passe refusé »** : avec `jsonrpc`,
+  recopiez le jeton de **Settings** → **API** (il change quand on le
+  régénère) ; avec un utilisateur, vérifiez le mot de passe, ou utilisez un
+  jeton d'accès personnel si la double authentification est active. Kanboard
+  verrouille un compte après plusieurs échecs.
+- **« Accès interdit à cet utilisateur »** : l'utilisateur ne peut pas lire
+  l'un des projets ou appeler une procédure. Un jeton d'application ne marche
+  qu'avec le nom d'utilisateur `jsonrpc` : avec un autre, il est refusé comme
+  un mauvais mot de passe.
+- **« Aucune API Kanboard à cette adresse »** : l'adresse répond, mais pas
+  avec l'API de Kanboard : vérifiez le port et le sous-dossier.
+- **« L'adresse redirige »** : saisissez l'adresse en `https://`.
+- **Un projet manque** : les projets inactifs ne sont pas suivis ; avec un
+  compte utilisateur, seuls ses projets sont vus ; un nom saisi dans
+  **Projets suivis** qui ne correspond à aucun projet est ignoré, et **Tester
+  la connexion** le signale.
+- **« Plusieurs tâches ouvertes portent ce titre »** : indiquez plutôt le
+  numéro (`#12`).
+- Logs : `LOG_LEVEL=debug` sur le conteneur montre chaque lecture.
+
+## Limites
+
+- Kanboard est lu toutes les 1 à 10 minutes (et à chaque échéance et à
+  minuit) : une tâche fermée dans Kanboard apparaît dans Gladys dans ce délai.
+  Les webhooks de Kanboard ne sont pas utilisés.
+- Deux requêtes par lecture : les projets, puis les tâches ouvertes de tous
+  les projets suivis en un seul lot JSON-RPC.
+- L'intégration ferme et crée des tâches ; elle ne les modifie, ne les
+  déplace, ne les assigne ni ne les supprime. Les sous-tâches ne sont pas
+  comptées.
+- Testée avec Kanboard v1.2.56, avec le jeton d'application et avec un compte
+  utilisateur.
+- Gladys ne garde aucune donnée de Kanboard en dehors de
+  `/data/kanboard-state.json` (l'heure de la dernière lecture, pour qu'aucun
+  événement ne se déclenche deux fois).
+- Sans lien avec Kanboard.
