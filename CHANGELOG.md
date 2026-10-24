@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-24
+
 ### Added
 
 - A **Kanboard** device for every followed project together and one per
@@ -30,4 +32,5 @@ the notes of the version's GitHub Release.
   interval (1 to 10 minutes).
 - Documentation in English, French, German and Spanish.
 
-[Unreleased]: https://github.com/guim31/gladys-kanboard/commits/main
+[Unreleased]: https://github.com/guim31/gladys-kanboard/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/guim31/gladys-kanboard/releases/tag/v1.0.0
