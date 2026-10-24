@@ -94,7 +94,8 @@ dispositivo.
 
 Filtros, para ambos: el proyecto (un dispositivo de proyecto: el dispositivo
 **Kanboard** no filtra nada, deje el campo vacío para todos los proyectos), el
-título de la tarea. Información transmitida a las acciones: la tarea, su
+título de la tarea (exacto, con mayúsculas y acentos, a diferencia de las
+acciones). Información transmitida a las acciones: la tarea, su
 número, su proyecto, su prioridad (de 0 a 3 por defecto, configurada por
 proyecto en Kanboard), su vencimiento.
 
@@ -115,7 +116,7 @@ detenida se dispara al volver, si tiene menos de una hora.
 - **Crear una tarea de Kanboard**: un título, el proyecto por nombre o número
   (vacío: el primer proyecto seguido, por nombre), y un vencimiento opcional:
   `2026-10-25 18:00`, `25/10/2026`, `hoy`, `mañana 9:00`, `+3` (dentro de tres
-  días), o solo una hora para hoy; sin hora, las 18:00. Las palabras también
+  días), o solo una hora para hoy; sin hora, las 18:00 (las 23:59 si ya han pasado las 18:00). Las palabras también
   funcionan en inglés, francés y alemán (`tomorrow`, `demain`, `morgen`). La
   fecha se lee en la zona horaria de Gladys, sea cual sea la de Kanboard.
   Resultados: la tarea, su número, su proyecto, su vencimiento.
@@ -148,9 +149,10 @@ cierra la tarea que disparó la escena.
   con un usuario, compruebe la contraseña, o use un token de acceso personal
   si la autenticación en dos pasos está activa. Kanboard bloquea una cuenta
   tras varios fallos.
-- **«Acceso prohibido a este usuario»**: el usuario no puede leer un
-  proyecto, o el nombre de usuario no es `jsonrpc` para un token de
-  aplicación.
+- **«Acceso prohibido a este usuario»**: el usuario no puede leer uno de los
+  proyectos o llamar a un procedimiento. Un token de aplicación solo funciona
+  con el nombre de usuario `jsonrpc`: con otro, se rechaza como una contraseña
+  incorrecta.
 - **«No hay ninguna API de Kanboard en esta dirección»**: la dirección
   responde, pero no con la API de Kanboard: compruebe el puerto y la
   subcarpeta.

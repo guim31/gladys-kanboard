@@ -126,6 +126,12 @@ test('the due date typed in a scene action, in the time zone of Gladys', () => {
   assert.equal(due('mañana'), '2026-10-25T17:00:00.000Z');
   assert.equal(due('+3'), '2026-10-27T17:00:00.000Z');
   assert.equal(due('8:00'), '2026-10-24T06:00:00.000Z', 'a time alone: today');
+  const late = Date.UTC(2026, 9, 24, 19, 0); // 21:00 in Paris
+  assert.equal(
+    new Date(parseDue('today', { now: late, timeZone: 'Europe/Paris' })).toISOString(),
+    '2026-10-24T21:59:00.000Z',
+    'after 18:00: tonight, not already overdue',
+  );
   assert.equal(due('2026-02-30'), undefined);
   assert.equal(due('25:00'), undefined);
   assert.equal(due('next week'), undefined);
@@ -135,6 +141,52 @@ test('the due date typed in a scene action, in the time zone of Gladys', () => {
 test('the wall time sent to Kanboard', () => {
   assert.equal(zonedWall(Date.UTC(2026, 9, 25, 8, 30), 'Europe/Paris'), '2026-10-25 09:30');
   assert.equal(zonedWall(Date.UTC(2026, 9, 25, 8, 30), 'UTC'), '2026-10-25 08:30');
+});
+
+test('the due date correction: Kanboard in another zone, and around a DST change', async () => {
+  // A Kanboard reading wall times in a given IANA zone, like PHP does.
+  const kanboard = (zone) => {
+    const tasks = new Map();
+    const read = (wall) => {
+      const [d, h] = wall.split(' ');
+      const [y, m, day] = d.split('-').map(Number);
+      const [hh, mm] = h.split(':').map(Number);
+      const guess = Date.UTC(y, m - 1, day, hh, mm);
+      // First instant whose wall time in `zone` is `wall` (PHP takes the earlier one).
+      for (let ms = guess - 15 * 3_600_000; ms <= guess + 15 * 3_600_000; ms += 60_000) {
+        if (zonedWall(ms, zone) === wall) {
+          return ms / 1000;
+        }
+      }
+      // A wall time skipped by the clocks: PHP moves it an hour forward.
+      return read(zonedWall(guess + 3_600_000, 'UTC'));
+    };
+    return async (url, { json }) => {
+      const { method, params, id } = json;
+      let result;
+      if (method === 'createTask') {
+        tasks.set(1, { id: 1, title: params.title, date_due: read(params.date_due) });
+        result = 1;
+      } else if (method === 'updateTask') {
+        tasks.get(1).date_due = read(params.date_due);
+        result = true;
+      } else {
+        result = tasks.get(params.task_id);
+      }
+      return { status: 200, body: JSON.stringify({ jsonrpc: '2.0', result, id }) };
+    };
+  };
+  const cases = [
+    ['UTC', 'Europe/Paris', Date.UTC(2026, 9, 25, 8, 30)],
+    ['Europe/London', 'Europe/Paris', Date.UTC(2026, 9, 25, 0, 30)],
+    ['America/New_York', 'Europe/Paris', Date.UTC(2026, 2, 8, 6, 30)],
+    ['Europe/Paris', 'Europe/Paris', Date.UTC(2026, 9, 25, 0, 30)],
+  ];
+  for (const [zone, gladysZone, dueAt] of cases) {
+    const client = new KanboardClient({ url: 'http://k', token: 't', request: kanboard(zone) });
+    const task = await client.createTask(1, 'x', { dueAt, timeZone: gladysZone });
+    assert.equal(task.date_due * 1000, dueAt, `${zone}, ${new Date(dueAt).toISOString()}`);
+  }
 });
 
 test('the client: Basic credentials, JSON-RPC errors, batches', async () => {

@@ -49,6 +49,10 @@ export const TRIGGERS = Object.freeze({
 export const HUB_TIMINGS = {
   // A failed read is tried again this soon, whatever the interval.
   retryMs: 30_000,
+  // ...but refused credentials only this rarely: Kanboard locks an account
+  // after a few failed logins. A new configuration or "Test the connection"
+  // reads at once.
+  authRetryMs: 15 * 60_000,
   // Read this long after a due time or midnight, so the server agrees.
   wakeSlackMs: 2_000,
   // Never read more often than this, even for tasks due a second apart.
@@ -147,6 +151,7 @@ export class KanboardHub {
     this.saved = {
       scope: typeof saved.scope === 'string' ? saved.scope : null,
       readAt: Number.isFinite(saved.readAt) ? saved.readAt : 0,
+      sent: Array.isArray(saved.sent) ? saved.sent.filter((id) => typeof id === 'string') : [],
     };
     await this.reconfigure(config);
   }
@@ -207,6 +212,9 @@ export class KanboardHub {
 
   /** The interval, shortened to the next due time or local midnight. */
   nextDelay(readAt = this.now()) {
+    if (this.error?.kind === ERROR_KINDS.AUTH) {
+      return Math.max(this.config.pollIntervalMs, this.timings.authRetryMs);
+    }
     if (this.error) {
       return Math.min(this.config.pollIntervalMs, this.timings.retryMs);
     }
@@ -513,10 +521,12 @@ export class KanboardHub {
     const scope = this.config.url;
     if (this.saved.scope !== scope || this.saved.readAt === 0) {
       // First reading of this instance: what already passed is not news.
-      this.saved = { scope, readAt: now };
+      this.saved = { scope, readAt: now, sent: [] };
       this.store.save(this.saved);
       return;
     }
+    // Events already sent at the instant a refused one was rewound to.
+    const already = new Set(this.saved.sent ?? []);
     const from = Math.max(this.saved.readAt, now - this.timings.maxLateMs);
     const crossed = (moment) => moment !== null && moment > from && moment <= now;
     const events = [];
@@ -534,16 +544,28 @@ export class KanboardHub {
     }
     events.sort((a, b) => a.at - b.at);
     let readAt = now;
+    let sent = [];
+    const fired = [];
     for (const { at, key, data } of events) {
+      const id = `${key}:${data.task_id}:${at}`;
+      if (already.has(id)) {
+        continue;
+      }
       if (!(await this.fire(key, data))) {
         // Gladys refused (restarting?): this event and the next ones are
-        // tried again at the next reading, within the hour.
+        // tried again at the next reading, within the hour; those of the
+        // same instant already sent are remembered, not sent twice.
         readAt = at - 1;
+        sent = [
+          ...fired.filter((item) => item.at === at).map((item) => item.id),
+          ...[...already].filter((item) => item.endsWith(`:${at}`)),
+        ];
         break;
       }
+      fired.push({ at, id });
     }
-    if (readAt > this.saved.readAt) {
-      this.saved = { scope, readAt };
+    if (readAt > this.saved.readAt || sent.length !== (this.saved.sent ?? []).length) {
+      this.saved = { scope, readAt: Math.max(readAt, this.saved.readAt), sent };
       this.store.save(this.saved);
     }
   }
@@ -633,10 +655,23 @@ export class KanboardHub {
     let projects;
     let nextDue = null;
     try {
-      // A fresh list: the task may have been created a minute ago.
       projects = await this.freshProjects();
-      const open = parseTasks(await client.openTasks(projects.map((project) => project.id)));
-      const { item, reason } = findByIdOrTitle(open, query);
+      const visible = new Set(projects.map((project) => project.id));
+      // A number: that task alone, no need to read every project.
+      const number = String(query ?? '')
+        .trim()
+        .match(/^#?(\d+)$/);
+      let item = null;
+      let reason;
+      if (number) {
+        const [byId] = parseTasks([await client.task(Number(number[1])).catch(() => null)]);
+        item = byId && visible.has(byId.projectId) ? byId : null;
+      }
+      if (!item) {
+        // A fresh list: the task may have been created a minute ago.
+        const open = parseTasks(await client.openTasks([...visible]));
+        ({ item, reason } = findByIdOrTitle(open, query));
+      }
       if (!item && expectedDue !== undefined) {
         // A widget button: the task was closed meanwhile (a second tap).
         throw new KanboardError(ERROR_KINDS.HTTP, 'task no longer open', 409, 'stale');

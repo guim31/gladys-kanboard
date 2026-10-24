@@ -226,6 +226,16 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
   envoie l'heure murale du fuseau de Gladys, relit la tâche et corrige une fois par `updateTask`.
   Une date sans heure prend **l'heure courante** (bizarrerie de Kanboard) : l'action de scène met
   18:00 par défaut.
+- **Identifiants refusés** : relus toutes les 15 min seulement (`authRetryMs`), pas toutes les 30 s :
+  Kanboard verrouille un compte après quelques échecs. Une nouvelle config ou « Tester la connexion »
+  relit tout de suite. Sur un PHP ancien, ids et nombres peuvent arriver **en chaînes** : tout passe
+  par `int()`.
+- La correction d'échéance boucle (3 fois au plus) : autour d'un changement d'heure, le décalage de
+  Kanboard à l'instant mal lu n'est pas celui de l'échéance voulue ; un écart de plus de 14 h ou un
+  `date_due` à 0 arrête la correction.
+- Deux événements de scène au même instant (minuit pour tous les `task_overdue`) : si Gladys en
+  refuse un, ceux déjà envoyés à cet instant sont gardés dans `sent` (fichier d'état) et pas
+  renvoyés.
 - **Récurrence** : à la fermeture d'une tâche répétée « à la fermeture » (`recurrence_trigger` 2),
   Kanboard crée une nouvelle tâche (`recurrence_child` de l'ancienne, échéance décalée). Les
   déclencheurs « première / dernière colonne » (0 / 1) ne réagissent pas à `closeTask`.

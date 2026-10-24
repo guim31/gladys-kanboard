@@ -96,7 +96,8 @@ fonctionnalité d'appareil.
 
 Filtres, pour les deux : le projet (un appareil de projet : l'appareil
 **Kanboard** ne filtre rien, laissez le champ vide pour tous les projets), le
-titre de la tâche. Informations transmises aux actions : la tâche, son
+titre de la tâche (exact, majuscules et accents compris, contrairement aux
+actions). Informations transmises aux actions : la tâche, son
 numéro, son projet, sa priorité (0 à 3 par défaut, réglée par projet dans
 Kanboard), son échéance.
 
@@ -119,7 +120,7 @@ d'une heure.
   le premier projet suivi, par ordre alphabétique), et une échéance
   facultative : `2026-10-25 18:00`, `25/10/2026`, `aujourd'hui`,
   `demain 9h00`, `+3` (dans trois jours), ou une heure seule pour
-  aujourd'hui ; sans heure, 18:00. Les mots marchent aussi en anglais,
+  aujourd'hui ; sans heure, 18:00 (23:59 si 18:00 est passé). Les mots marchent aussi en anglais,
   allemand et espagnol (`tomorrow`, `morgen`, `mañana`). La date est lue dans
   le fuseau horaire de Gladys, quel que soit celui de Kanboard. Résultats : la
   tâche, son numéro, son projet, son échéance.
@@ -153,8 +154,9 @@ Les champs acceptent les variables de scène :
   jeton d'accès personnel si la double authentification est active. Kanboard
   verrouille un compte après plusieurs échecs.
 - **« Accès interdit à cet utilisateur »** : l'utilisateur ne peut pas lire
-  un projet, ou le nom d'utilisateur n'est pas `jsonrpc` pour un jeton
-  d'application.
+  l'un des projets ou appeler une procédure. Un jeton d'application ne marche
+  qu'avec le nom d'utilisateur `jsonrpc` : avec un autre, il est refusé comme
+  un mauvais mot de passe.
 - **« Aucune API Kanboard à cette adresse »** : l'adresse répond, mais pas
   avec l'API de Kanboard : vérifiez le port et le sous-dossier.
 - **« L'adresse redirige »** : saisissez l'adresse en `https://`.

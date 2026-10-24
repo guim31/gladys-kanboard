@@ -71,6 +71,9 @@ const TLS_CODES = new Set([
 ]);
 
 function networkError(err) {
+  if (err.code === 'ERESPONSETOOLARGE') {
+    return new KanboardError(ERROR_KINDS.HTTP, 'Response too large');
+  }
   if (TLS_CODES.has(err.code)) {
     return new KanboardError(ERROR_KINDS.TLS, `Certificate refused (${err.code})`);
   }
@@ -293,11 +296,24 @@ export class KanboardClient {
       throw new KanboardError(ERROR_KINDS.HTTP, 'createTask refused', 200, 'refused');
     }
     let task = await this.task(id);
-    if (sent && task && Number(task.date_due) * 1000 !== Math.floor(dueAt / 60_000) * 60_000) {
-      // Kanboard read the wall time in its own zone: its offset is the gap.
-      const offset = wallAsUtc(sent) - Number(task.date_due) * 1000;
-      await this.call('updateTask', { id, date_due: utcWall(dueAt + offset) });
-      task = (await this.task(id)) ?? task;
+    if (sent) {
+      // Kanboard read the wall time in its own zone: shift what is sent by
+      // the gap, a few times at most (the offsets may differ around a DST
+      // change), and give up on a gap no time zone explains.
+      const wanted = Math.floor(dueAt / 60_000) * 60_000;
+      let wall = sent;
+      for (let attempt = 0; attempt < 3 && task; attempt += 1) {
+        const saved = Number(task.date_due) * 1000;
+        const gap = wanted - saved;
+        if (gap === 0 || !(saved > 0) || Math.abs(gap) > 14 * 60 * 60_000) {
+          break;
+        }
+        wall = utcWall(wallAsUtc(wall) + gap);
+        if ((await this.call('updateTask', { id, date_due: wall })) !== true) {
+          break;
+        }
+        task = (await this.task(id)) ?? task;
+      }
     }
     return task ?? { id, title, project_id: projectId };
   }

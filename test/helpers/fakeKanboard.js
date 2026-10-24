@@ -58,11 +58,11 @@ export class FakeKanboard {
   }
 
   task(id) {
-    return this.tasks.find((task) => task.id === id);
+    return this.tasks.find((task) => Number(task.id) === id);
   }
 
   project(id) {
-    return this.projects.find((project) => project.id === id);
+    return this.projects.find((project) => Number(project.id) === id);
   }
 
   /** Who is calling: 'app', 'user', or null. */
@@ -112,7 +112,8 @@ export class FakeKanboard {
         return {
           result: this.tasks.filter(
             (task) =>
-              task.project_id === projectId && task.is_active === Number(params.status_id ?? 1),
+              Number(task.project_id) === projectId &&
+              Number(task.is_active) === Number(params.status_id ?? 1),
           ),
         };
       }

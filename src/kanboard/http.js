@@ -11,7 +11,8 @@
 import http from 'node:http';
 import https from 'node:https';
 
-const MAX_BODY_BYTES = 2 * 1024 * 1024;
+// Full task objects, descriptions included: a busy instance sends a lot.
+const MAX_BODY_BYTES = 16 * 1024 * 1024;
 
 /**
  * @param {string} url absolute URL
@@ -51,7 +52,9 @@ export function httpRequest(
         response.on('data', (chunk) => {
           size += chunk.length;
           if (size > MAX_BODY_BYTES) {
-            request.destroy(new Error('Response too large'));
+            const error = new Error('Response too large');
+            error.code = 'ERESPONSETOOLARGE';
+            request.destroy(error);
             return;
           }
           chunks.push(chunk);

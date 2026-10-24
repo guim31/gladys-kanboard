@@ -282,6 +282,12 @@ test('create_task: the due date is typed in the time zone of Gladys, whatever Ka
 
   const noTime = await w.fake.sceneAction('create_task', { title: 'A', due_date: '2026-10-30' });
   assert.equal(noTime.data.outputs.due_date, '2026-10-30T17:00:00.000Z', '18:00 by default');
+  const evening = await w.fake.sceneAction('create_task', { title: 'C', due_date: '24/10/2026' });
+  assert.equal(
+    evening.data.outputs.due_date,
+    '2026-10-24T16:00:00.000Z',
+    '18:00 Paris, still ahead',
+  );
   const bad = await w.fake.sceneAction('create_task', { title: 'B', due_date: 'next week' });
   assert.match(bad.error, /Due date not understood/);
 });
@@ -373,11 +379,70 @@ test('the states are published again when a device is added', async (t) => {
 
 test('a reading of the old instance during a reconfiguration is dropped', async (t) => {
   const w = await world(t);
+  const original = w.server.handle.bind(w.server);
+  let release;
+  // The next request of the old instance hangs until the new config is applied.
+  w.server.handle = (...args) =>
+    new Promise((resolve) => {
+      release = () => {
+        w.server.handle = original;
+        resolve(original(...args));
+      };
+    });
+  w.server.task(5).title = 'Seen only by the old reading';
   const reading = w.hub.poll();
-  await w.fake.configUpdated({ ...w.fake.config, url: 'http://192.0.2.99:8080' });
-  await reading;
+  for (let i = 0; i < 100 && !release; i += 1) {
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+  const updated = w.fake.configUpdated({ ...w.fake.config, url: 'http://192.0.2.99:8080' });
+  await new Promise((resolve) => setImmediate(resolve));
+  release();
+  await Promise.all([reading, updated]);
   assert.deepEqual(w.hub.tasks, [], 'nothing of the old instance kept');
   assert.equal(w.fake.connectionStatus.connected, false);
+});
+
+test('refused credentials are tried again rarely: Kanboard locks accounts', async (t) => {
+  const w = await world(t, { config: { ...BASE_CONFIG, api_token: 'wrong' } });
+  assert.equal(w.hub.nextDelay(), 15 * 60_000);
+  w.server.online = false;
+  await w.fake.configUpdated({ ...w.fake.config, api_token: TOKEN });
+  assert.equal(w.hub.nextDelay(), 30_000, 'an outage is retried soon');
+});
+
+test('events of the same instant: one refused, the others not sent twice', async (t) => {
+  const clock = createClock();
+  const w = await world(t, { clock });
+  w.server.task(3).date_due = at(18, 0) / 1000;
+  const publish = w.gladys.publishSceneEvent.bind(w.gladys);
+  let refuse = true;
+  t.mock.method(w.gladys, 'publishSceneEvent', async (key, data) => {
+    if (refuse && data.task_id === 3) {
+      throw new Error('Gladys is restarting');
+    }
+    return publish(key, data);
+  });
+  clock.time = at(18, 0, 2);
+  await w.hub.poll();
+  refuse = false;
+  clock.advance(60_000);
+  await w.hub.poll();
+  await w.hub.poll();
+  assert.deepEqual(keys(w), ['task_due:1', 'task_due:3']);
+});
+
+test('ids sent as strings (Kanboard on an older PHP) are understood', async (t) => {
+  const server = new FakeKanboard({ now: createClock().now });
+  for (const item of [...server.projects, ...server.tasks]) {
+    for (const key of ['id', 'project_id', 'is_active', 'date_due', 'priority']) {
+      if (typeof item[key] === 'number') {
+        item[key] = String(item[key]);
+      }
+    }
+  }
+  const w = await world(t, { server });
+  assert.equal(counters(w, overviewId(w.gladys)).open, 8);
+  assert.equal(w.fake.discoveredDevices.length, 3);
 });
 
 test('the fixtures start where the tests expect them', () => {

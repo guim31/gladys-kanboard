@@ -85,7 +85,8 @@ The counters can also go on the dashboard as any device feature.
   Once per task and due date.
 
 Filters, for both: the project (a project device: the **Kanboard** device
-filters nothing, leave the field empty for every project), the task title.
+filters nothing, leave the field empty for every project), the task title
+(exact, case and accents included, unlike the actions).
 Information passed on to the actions: the task, its number, its project, its
 priority (0 to 3 by default, set per project in Kanboard), its due date.
 
@@ -106,7 +107,8 @@ starts again, if it is less than an hour old.
 - **Create a Kanboard task**: a title, the project by name or number (empty:
   the first followed project, by name), and an optional due date:
   `2026-10-25 18:00`, `25/10/2026`, `today`, `tomorrow 9:00`, `+3` (in three
-  days), or a time alone for today; without a time, 18:00. The words also work
+  days), or a time alone for today; without a time, 18:00 (23:59 when 18:00 has
+  passed). The words also work
   in French, German and Spanish (`demain`, `morgen`, `mañana`). The date is
   read in the time zone of Gladys, whatever the one of Kanboard. Results: the
   task, its number, its project, its due date.
@@ -136,8 +138,9 @@ task that triggered the scene.
   of **Settings** → **API** again (it changes when regenerated); with a user,
   check the password, or use a personal access token if two-factor
   authentication is on. Kanboard locks an account after several failures.
-- **"Access forbidden to this user"**: the user may not read a project, or
-  the username is not `jsonrpc` for an application token.
+- **"Access forbidden to this user"**: the user may not read one of the
+  projects or call a procedure. An application token works only with the
+  username `jsonrpc`: with another one it is refused like a wrong password.
 - **"No Kanboard API at this address"**: the address answers, but not with
   the Kanboard API: check the port and the sub-folder.
 - **"The address redirects"**: enter the `https://` address.

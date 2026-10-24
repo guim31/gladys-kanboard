@@ -29,10 +29,11 @@ const int = (value, fallback = 0) =>
  */
 export function parseProjects(raw) {
   return (Array.isArray(raw) ? raw : [])
-    .filter((project) => project && Number.isInteger(project.id) && project.id > 0)
+    .filter((project) => project && int(project.id) > 0)
     .filter((project) => int(project.is_active, 1) === 1)
     .map((project) => ({
-      id: project.id,
+      // Kanboard on older PHP versions sends numbers as strings.
+      id: int(project.id),
       title: text(project.name) || `#${project.id}`,
       priorityDefault: int(project.priority_default),
       priorityEnd: int(project.priority_end, 3),
@@ -48,9 +49,9 @@ export function parseProjects(raw) {
  */
 export function parseTasks(raw) {
   return (Array.isArray(raw) ? raw : [])
-    .filter((task) => task && Number.isInteger(task.id) && int(task.is_active, 1) === 1)
+    .filter((task) => task && int(task.id) > 0 && int(task.is_active, 1) === 1)
     .map((task) => ({
-      id: task.id,
+      id: int(task.id),
       title: text(task.title) || `#${task.id}`,
       projectId: int(task.project_id),
       dueAt: time(task.date_due),
@@ -177,7 +178,12 @@ export function parseDue(raw, { now, timeZone }) {
   if (hour > 23 || minute > 59) {
     return undefined;
   }
-  return localTime(date.year, date.month, date.day, hour, minute, timeZone);
+  const at = localTime(date.year, date.month, date.day, hour, minute, timeZone);
+  if (hourText === undefined && at <= now) {
+    // "today" typed in the evening: due tonight, not already overdue.
+    return localTime(date.year, date.month, date.day, 23, 59, timeZone);
+  }
+  return at;
 }
 
 /** A time zone Intl knows, else the one of the process. */

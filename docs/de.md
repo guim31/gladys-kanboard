@@ -94,7 +94,9 @@ Die Zähler können auch wie jede Gerätefunktion auf das Dashboard.
   fällige Aufgabe noch offen. Einmal pro Aufgabe und Fälligkeit.
 
 Filter, für beide: das Projekt (ein Projektgerät: Das Gerät **Kanboard**
-filtert nichts, lass das Feld für alle Projekte leer), der Titel der Aufgabe.
+filtert nichts, lass das Feld für alle Projekte leer), der Titel der Aufgabe
+(genau, mit Groß- und Kleinschreibung und Akzenten, anders als bei den
+Aktionen).
 An die Aktionen übergebene Informationen: die Aufgabe, ihre Nummer, ihr
 Projekt, ihre Priorität (standardmäßig 0 bis 3, pro Projekt in Kanboard
 eingestellt), ihre Fälligkeit.
@@ -118,7 +120,7 @@ eine Stunde alt ist.
 - **Kanboard-Aufgabe erstellen**: ein Titel, das Projekt per Name oder Nummer
   (leer: das erste verfolgte Projekt, nach Namen) und eine optionale
   Fälligkeit: `2026-10-25 18:00`, `25.10.2026`, `heute`, `morgen 9:00`, `+3`
-  (in drei Tagen) oder nur eine Uhrzeit für heute; ohne Uhrzeit 18:00. Die
+  (in drei Tagen) oder nur eine Uhrzeit für heute; ohne Uhrzeit 18:00 (23:59, wenn 18:00 vorbei ist). Die
   Wörter funktionieren auch auf Englisch, Französisch und Spanisch
   (`tomorrow`, `demain`, `mañana`). Das Datum wird in der Zeitzone von Gladys
   gelesen, egal welche Kanboard nutzt. Ergebnisse: die Aufgabe, ihre Nummer,
@@ -152,9 +154,10 @@ schließt die Aufgabe, die die Szene ausgelöst hat.
   Neugenerieren); mit einem Benutzer das Passwort prüfen oder bei aktiver
   Zwei-Faktor-Authentifizierung ein persönliches Zugriffstoken verwenden.
   Kanboard sperrt ein Konto nach mehreren Fehlversuchen.
-- **„Zugriff für diesen Benutzer verboten“**: Der Benutzer darf ein Projekt
-  nicht lesen, oder der Benutzername ist für ein Anwendungstoken nicht
-  `jsonrpc`.
+- **„Zugriff für diesen Benutzer verboten“**: Der Benutzer darf eines der
+  Projekte nicht lesen oder eine Prozedur nicht aufrufen. Ein Anwendungstoken
+  funktioniert nur mit dem Benutzernamen `jsonrpc`: Mit einem anderen wird es
+  wie ein falsches Passwort abgelehnt.
 - **„Keine Kanboard-API unter dieser Adresse“**: Die Adresse antwortet, aber
   nicht mit der Kanboard-API: Prüfe Port und Unterordner.
 - **„Die Adresse leitet um“**: Gib die `https://`-Adresse ein.
