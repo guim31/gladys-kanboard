@@ -1,61 +1,162 @@
-# Demo Devices Template
+# Vikunja
 
-This is the user documentation of the integration. Gladys re-hosts this file
-and shows a permanent **Documentation** link to it in the Configuration screen
-(in the user's language, with English as the fallback) — it is when
-configuring that the user needs it most. Keep the short onboarding hints in
-the `section` blocks of the manifest `config_schema`; put the long
-step-by-step (screenshots, troubleshooting…) here.
+Bring the tasks of your [Vikunja](https://vikunja.io) into Gladys: what is
+left to do today, what is overdue, the next task of each project. A scene
+reacts when a task falls due or a reminder rings, another one adds "buy bread"
+from a button, a tap on the dashboard ticks a task off, and Gladys can read
+out the tasks of the day every morning.
 
-## What you get
+> **Feedback welcome.** This integration was tested against a real Vikunja
+> server (Docker image `vikunja/vikunja` v2.7.0, October 2026), not yet in
+> everyday use. If something does not work as described, please say so on the
+> [Gladys forum](https://community.gladysassistant.com) or in the
+> [issues](https://github.com/guim31/gladys-vikunja/issues).
 
-Six demo devices show up after installation: a weather station (real data
-from Open-Meteo), a switch, a dimmable light, a smart plug with power
-metering, a motion sensor and a camera.
+## What you need
 
-## Configuration
+- Gladys Assistant 5.1.0 or later.
+- A **self-hosted Vikunja** (0.22 or later), reachable from Gladys (the Docker
+  image listens on port 3456).
+- An **API token** of a Vikunja user. In Vikunja: **Settings** → **API
+  Tokens** → **Create a token**, give it a name (`Gladys`), an expiry date,
+  and these permissions:
+  - **Projects**: `read_all`;
+  - **Tasks**: `read_all`, `read_one`, `update` (to mark tasks done) and
+    `create` (to create tasks).
 
-1. Open the **Configuration** tab of the integration.
-2. Set the **latitude** and **longitude** the demo weather station should
-   observe (they default to Paris), and pick your temperature unit.
-   The **refresh interval** sets how often the weather station and the
-   plug's power are read: every 5 minutes by default, every minute at most.
-3. Save: the devices appear in the **Discovery** tab, ready to be added.
+  Copy the token, which starts with `tk_`: Vikunja shows it only once. A token
+  without `update` or `create` still works for the counters, the widget and
+  the triggers; only the matching action is refused.
 
-The **Prefer the local connection** toggle drives the demo plug: it reports
-the channel it actually uses as a badge (local or cloud), with an orange dot
-when it runs degraded (local refused, cloud fallback).
+The integration sees the projects and tasks this user can see (their own
+and the shared ones), and acts **as this user**.
 
-## Actions
+## Set up
 
-- **Test the weather provider** — performs a live request to Open-Meteo and
-  shows the current temperature and humidity under the button.
-- **Identify a device** — pick one of your devices in the list and it will
-  signal itself (the demo light "blinks" in the logs).
+1. In Gladys, **Integrations** → install **Vikunja**.
+2. In the **Configuration** screen, fill in:
+   - **Address**: the address of Vikunja, for example
+     `http://192.168.1.20:3456`, or `https://tasks.example.org` behind a
+     reverse proxy (a path prefix such as `/vikunja` is kept);
+   - **API token**: the `tk_…` token.
+3. Options:
+   - **Followed projects**: names or numbers separated by commas (`Home, 3`).
+     Empty: every project. Archived projects are never followed;
+   - **Accept self-signed certificates**: for an `https://` address with a
+     self-signed certificate, on your own server only;
+   - **Refresh interval**: 1 to 10 minutes (5 by default). Due times,
+     reminders and midnight are always followed on time, whatever the
+     interval;
+   - **Language of the feature names**: the names given to the features when
+     a device is added (French by default), and the texts sent to scenes.
+4. Save, then **Test the connection**: it reads Vikunja and gives its version,
+   the number of open tasks and of followed projects.
+5. In the **Discovery** tab, add the devices you want.
 
-## Scenes
+## Devices
 
-The integration adds its own cards to the scene editor (Gladys 5.1 or
-later), under the **Integrations** category:
+**Vikunja** (every followed project together) and **Vikunja _project_** for
+each followed project. Each one has four features:
 
-- **Motion detected** (trigger) — starts the scene when a demo motion sensor
-  sees something move. Optionally pick the sensor and what moved (person,
-  animal); left empty, any detection matches. The following actions can
-  read what moved with `{{triggerEvent.data.target}}`.
-- **Identify a device** (action) — makes the chosen device signal itself.
-  It returns whether the device could signal itself, so the following
-  actions can depend on it.
+| Feature             | What it says                                                                     |
+| ------------------- | -------------------------------------------------------------------------------- |
+| `Open tasks`        | tasks not done, with or without a due date                                       |
+| `Tasks to do today` | open tasks due before midnight, overdue ones included: what is left by tonight   |
+| `Overdue tasks`     | open tasks whose due time has passed                                             |
+| `Next task`         | the title of the open task with the earliest due time still ahead; `None` if not |
+
+"Today" is the day in the time zone of Gladys. A sub-project is a project of
+its own: its tasks are not counted in its parent.
 
 ## Dashboard
 
-Add the **Demo status** widget to a dashboard: it shows the live
-temperature of the weather station and the power of the office plug, the
-connection the plug currently uses (orange when degraded) and the observed
-location. Its **Identify the light** button makes the demo light signal
-itself.
+The **Today's tasks** widget shows two tiles (to do today, overdue), the list
+of the tasks of the day, overdue first, with their time (in orange when the
+priority is high) and their project, and a button for each of the four most
+urgent: a tap marks the task done. Choose a project device in the widget
+settings to see only its tasks; leave it empty for every followed project.
+When nothing is left, the widget says so and gives the next task.
+
+The counters can also go on the dashboard as any device feature.
+
+## Scenes
+
+### Triggers
+
+- **Vikunja task due**: an open task reached its due time.
+- **Vikunja task reminder**: a reminder of an open task rang (a fixed date, or
+  one relative to the due date: Vikunja computes it).
+- **Vikunja task overdue**: at midnight, a task due that day is still not
+  done. Once per task and due date.
+
+Filters, for the three: the project (a project device: the **Vikunja**
+device filters nothing, leave the field empty for every project), the task
+title.
+Information passed on to the actions: the task, its number, its project, its
+priority (0 to 5), its due date; and the reminder time for a reminder.
+
+A task done before its due time fires nothing. A due date moved by hand to a
+moment before the previous reading fires nothing either: only the moments
+that pass while the integration runs count. A restart does not fire anything twice; a moment
+that passed while the integration was stopped fires when it starts again, if
+it is less than an hour old.
+
+### Actions
+
+- **Mark a Vikunja task done**: give the exact **title** (case and accents
+  ignored) or the **number** of the task (`#12`, the number in the address of
+  the task in Vikunja). Any open task the token sees, followed project or not.
+  A repeating task moves to its next due date, as in Vikunja. Results: the
+  task, its number, its project, the next due date of a repeating task.
+- **Create a Vikunja task**: a title, and the project by name or number
+  (empty: the first project of the list in Vikunja, usually Inbox). Results:
+  the task, its number, its project.
+- **Read today's Vikunja tasks**: the tasks of the day as a sentence
+  (`4 task(s) to do today: …. 2 overdue.`), for every followed project or one
+  of them. Results: the sentence, the number of tasks to do today, of overdue
+  tasks. Send the sentence in a message, or have Gladys say it.
+
+The fields accept scene variables: `{{triggerEvent.data.task_id}}` marks done
+the task that triggered the scene.
+
+### Scene ideas
+
+- At 7:30, **Read today's Vikunja tasks**, then send the sentence on Telegram.
+- **Vikunja task reminder** on the `Shopping` project: flash the hallway light.
+- A button by the door runs **Create a Vikunja task** with `Buy bread` in
+  `Shopping`.
+- An NFC tag on the bins runs **Mark a Vikunja task done** with
+  `Take out the bins`.
 
 ## Troubleshooting
 
-The integration logs everything it does: check the integration logs from the
-Gladys UI (or `docker logs` on the host) with `LOG_LEVEL=debug` for the full
-detail.
+- **"Vikunja does not answer"**: check the address and the port from the
+  Gladys machine (`http://<address>:3456` opens Vikunja in a browser).
+- **"API token refused or missing a permission"**: the token expired, was
+  deleted or mistyped, or lacks a permission of the list above. Vikunja
+  answers the same way in every case: create a new token with every
+  permission listed.
+- **"No Vikunja API at this address"**: the address answers, but not with the
+  Vikunja API: check the port, or the path prefix behind a reverse proxy.
+- **"The address redirects"**: enter the `https://` address.
+- **A project is missing**: archived projects are not followed; a name typed
+  in **Followed projects** that matches no project is ignored, and **Test the
+  connection** lists it.
+- **"Several open tasks have this title"**: give the number (`#12`) instead.
+- Logs: `LOG_LEVEL=debug` on the container shows every reading.
+
+## Limits
+
+- Vikunja is read every 1 to 10 minutes (and at each due time, reminder and
+  at midnight): a task done in Vikunja shows up in Gladys within that delay.
+  Vikunja webhooks are not used.
+- Two requests per reading (projects, open tasks), plus one per extra page of
+  50 tasks. Up to 20 pages of open tasks are read.
+- The integration marks tasks done and creates tasks; it does not edit,
+  delete, move or assign them.
+- Tested with Vikunja v2.7.0. Versions 0.22 to 0.24 should work (the task
+  list there is `/tasks/all`, used when `/tasks` does not exist), but they were
+  not tested.
+- Gladys keeps no Vikunja data beyond `/data/vikunja-state.json` (the time of
+  the last reading, so that no event fires twice).
+- Not affiliated with Vikunja.
